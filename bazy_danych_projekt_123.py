@@ -241,7 +241,6 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, max_konk=3):
             continue
             
         dane.append({
-            'id_przebiegu': i,
             'godzina': fake.time(),
             'zwyciezca': random.choice([True, False, False]),
             'czas': datetime.now(),
