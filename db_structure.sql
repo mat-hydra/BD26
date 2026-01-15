@@ -1,6 +1,6 @@
 -- 1. Tabela: pracownicy
 CREATE TABLE pracownicy (
-  id_pracownika INT NOT NULL,
+  id_pracownika INT NOT NULL AUTO_INCREMENT,
   imie VARCHAR(100) NULL,
   nazwisko VARCHAR(100) NULL,
   pracuje_od DATE NULL,
@@ -14,7 +14,7 @@ CREATE TABLE pracownicy (
 
 -- 2. Tabela: sponsorzy
 CREATE TABLE sponsorzy (
-  id_sponsora INT NOT NULL,
+  id_sponsora INT NOT NULL AUTO_INCREMENT,
   nazwa VARCHAR(255) NULL,
   wspolpraca_od DATE NULL,
   wspolpraca_do DATE NULL,
@@ -26,10 +26,11 @@ CREATE TABLE sponsorzy (
 
 -- 3. Tabela: chomiki
 CREATE TABLE chomiki (
-  id_chomika INT NOT NULL,
+  id_chomika INT NOT NULL AUTO_INCREMENT,
   imie VARCHAR(100) NULL,
   plec CHAR(1) NULL,
   data_urodzenia DATE NULL,
+  data_smierci DATE NULL,
   waga INT NULL COMMENT 'w gramach',
   historia TEXT NULL,
   rasa VARCHAR(100) NULL,
@@ -39,7 +40,7 @@ CREATE TABLE chomiki (
 
 -- 4. Tabela: zawody
 CREATE TABLE zawody (
-  id_zawodow INT NOT NULL,
+  id_zawodow INT NOT NULL AUTO_INCREMENT,
   nazwa VARCHAR(255) NULL COMMENT 'nazwa zawodow',
   termin DATE NULL COMMENT 'termin zawodow',
   panstwo VARCHAR(100) NULL,
@@ -50,7 +51,7 @@ CREATE TABLE zawody (
 
 -- 5. Tabela: konkurencje
 CREATE TABLE konkurencje (
-  id_konkurencji INT NOT NULL,
+  id_konkurencji INT NOT NULL AUTO_INCREMENT,
   nazwa VARCHAR(255) NULL,
   kategorie VARCHAR(100) NULL COMMENT '"naturalne", "formula CH"',
   charakterystyka TEXT NULL,
@@ -59,10 +60,10 @@ CREATE TABLE konkurencje (
 
 -- 6. Tabela: przebieg
 CREATE TABLE przebieg (
-  id_przebiegu INT NOT NULL,
+  id_przebiegu INT NOT NULL AUTO_INCREMENT,
   godzina TIME NULL COMMENT 'godzina startu dyscypliny',
   zwyciezca BOOLEAN NULL,
-  czas TIMESTAMP NULL COMMENT 'czas trwania biegu',
+  czas INT NULL COMMENT 'czas trwania biegu',
   id_chomika INT NOT NULL,
   id_zawodow INT NOT NULL,
   id_konkurencji INT NOT NULL,
@@ -71,14 +72,14 @@ CREATE TABLE przebieg (
 
 -- 7. Tabela: substancje_zakazane
 CREATE TABLE substancje_zakazane (
-  id_substancji INT NOT NULL,
+  id_substancji INT NOT NULL AUTO_INCREMENT,
   nazwa VARCHAR(255) NULL,
   PRIMARY KEY (id_substancji)
 ) COMMENT 'tabela z informacjami o substancjach zakazanych';
 
 -- 8. Tabela: kontrola_antydopingowa
 CREATE TABLE kontrola_antydopingowa (
-  id_kontroli INT NOT NULL,
+  id_kontroli INT NOT NULL AUTO_INCREMENT,
   data_badania DATE NULL,
   id_chomika INT NOT NULL,
   id_substancji INT NULL,
@@ -95,18 +96,18 @@ CREATE TABLE rejestracja_chomika (
 
 -- 10. Tabela: finanse
 CREATE TABLE finanse (
-  id_transakcji INT NOT NULL,
+  id_transakcji INT NOT NULL AUTO_INCREMENT,
   tytul VARCHAR(255) NULL,
   dane_transakcji TEXT NULL,
   data DATE NULL,
   dochod DECIMAL(10, 2) NULL,
-  id_chomika INT NOT NULL,
+  id_chomika      INT NOT NULL, 
   PRIMARY KEY (id_transakcji)
 ) COMMENT 'tabela z informacjami o finansowaniu';
 
 -- 11. Tabela: wyplaty
 CREATE TABLE wyplaty (
-  id_wyplaty INT NOT NULL,
+  id_wyplaty INT NOT NULL AUTO_INCREMENT,
   kwota_zl DECIMAL(10, 2) NULL,
   data_wypłaty DATE NULL,
   id_pracownika INT NOT NULL,
