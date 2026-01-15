@@ -17,7 +17,6 @@ output:
 
 \newpage
 
-
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 
@@ -27,6 +26,7 @@ library(RMariaDB)
 library(knitr)    
 library(lubridate) 
 library(ggplot2)
+library(ggrepel)
 
 con <- dbConnect(RMariaDB::MariaDB(), 
                  dbname = "baza", 
@@ -36,34 +36,118 @@ con <- dbConnect(RMariaDB::MariaDB(),
 ```
 
 # **Wstęp**
-nasz raport dotyczy analizy chomików sportowców
+Niniejszy raport stanowi analizę danych Międzynarodowej Federacji Wyścigów Chomików. Celem dokumentu jest ocena wyników sportowych, kondycji finansowej federacji oraz analiza trendów w chomiczym sporcie na podstawie zgromadzonych **`r dbGetQuery(con, "SELECT COUNT(*) as n FROM chomiki")$n` ** rekordów chomików, i **`r dbGetQuery(con, "SELECT COUNT(*) as n FROM zawody")$n`** rekordów zawodów.
 
 
-# Analiza Mistrzów i Wyników Sportowych
+# **Analiza Mistrzów i Wyników Sportowych**
+
+```{sql connection=con, output.var = "mistrze_wyniki"}
+SELECT konkurencje.kategorie as kategoria, chomiki.imie as imie  , chomiki.rasa as rasa, COUNT(przebieg.zwyciezca) as liczba_wygranych FROM przebieg
+JOIN chomiki ON przebieg.id_chomika = chomiki.id_chomika
+JOIN konkurencje ON przebieg.id_konkurencji = konkurencje.id_konkurencji
+WHERE przebieg.zwyciezca = 1
+GROUP BY kategoria, imie, rasa
+ORDER BY kategoria, liczba_wygranych DESC;
+```
+
+```{r tabela_mistrze_wyniki}
+knitr::kable(mistrze_wyniki)
+
+```
+
+# **Szczyt Kariery i Wiek Zawodników**
+
+```{sql connection=con, output.var = "zwyciestwa_wiek"}
+SELECT chomiki.imie as imie, chomiki.data_urodzenia as data_urodzenia, zawody.termin as szczyt_kariery, 
+TIMESTAMPDIFF(MONTH, chomiki.data_urodzenia, zawody.termin) as wiek_w_miesiacach, przebieg.zwyciezca as zwyciezca FROM przebieg 
+JOIN chomiki  ON przebieg.id_chomika = chomiki.id_chomika
+JOIN zawody  ON przebieg.id_zawodow = zawody.id_zawodow
+WHERE zwyciezca = 1;
+```
+
+```{r tabela_zwyciestwa_wiek}
+knitr::kable(zwyciestwa_wiek)
+
+```
+
+```{r wykres_zwyciestwa_wiek}
+ggplot(zwyciestwa_wiek, aes(x = wiek_w_miesiacach)) +
+  
+  geom_bar(fill = "darkorange", color = "white", alpha = 0.9, width = 0.8) +
+  scale_x_continuous(breaks = seq(0, 15, by = 1)) +
+  labs(
+    title = "Analiza Szczytu Kariery: Liczba Zwycięstw a Wiek",
+    x = "Wiek chomika (w miesiącach)",
+    y = "Łączna liczba zwycięstw",) +
+  
+  theme_minimal(base_size = 13) + 
+  theme(
+    plot.title = element_text(face = "bold", size = 20, color = "black"),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank() 
+  )
+```
+
+# **Wpływ Finansowania na Sukces (Nierówności)**
+```{sql connection=con, output.var = "fin_sukces"}
+SELECT chomiki.imie as imie, SUM(finanse.dochod) AS suma_inwestycji, 
+(SELECT COUNT(*) FROM przebieg WHERE przebieg.id_chomika = chomiki.id_chomika AND przebieg.zwyciezca = 1) AS liczba_wygranych FROM chomiki
+JOIN finanse ON chomiki.id_chomika = finanse.id_chomika
+GROUP BY chomiki.id_chomika, imie
+ORDER BY liczba_wygranych DESC;
+```
+
+```{r tabela_fin_sukces}
+knitr::kable(fin_sukces)
+
+```
+
+```{r wykres_fin_sukces}
+
+fin_sukces$liczba_wygranych <- as.numeric(fin_sukces$liczba_wygranych)
+fin_sukces$suma_inwestycji <- as.numeric(fin_sukces$suma_inwestycji)
+
+ggplot(fin_sukces, aes(x = suma_inwestycji, y = liczba_wygranych)) +
+
+  geom_jitter(size = 3, color = "orange", alpha = 0.7, width = 0.5, height = 0.2) +
+  
+  scale_x_continuous(limits = c(49, 50), breaks = seq(49, 50, by = 0.1)) +
+  
+  scale_y_continuous(breaks = function(x) seq(0, max(x) + 1, by = 1)) +
+  
+  labs(
+    title = "Finansowanie a liczb zwycięstw",
+    x = "Suma inwestycji",
+    y = "Łączna liczba wygranych"
+  ) +
+  
+  theme_minimal(base_size = 18) +
+  theme(
+    plot.title = element_text(face = "bold", size = 26, color = "black"),
+    axis.title = element_text(face = "bold"),
+    axis.text = element_text(color = "black"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+# **Trendy i Popularność Sportu**
 
 
-# Szczyt Kariery i Wiek Zawodników
+# **Kondycja Finansowa i Atrakcyjność Rynkowa**
 
 
-# Wpływ Finansowania na Sukces (Nierówności)
+# **Wpływ wagi na wyniki – czy lżejsze chomiki są szybsze?**
 
 
-# Trendy i Popularność Sportu
+# **Jaka jest skala dopingu w chomiczym sporcie?**
 
 
-# Kondycja Finansowa i Atrakcyjność Rynkowa
+# **Gdzie chomiczy sport jest najpopularniejszy?**
 
 
-# Wpływ wagi na wyniki – czy lżejsze chomiki są szybsze?
-
-
-# Jaka jest skala dopingu w chomiczym sporcie?
-
-
-# Gdzie chomiczy sport jest najpopularniejszy?
-
-
-# Który sponsor ma pod opieką chomiki z największą liczbą zwycięstw.
+# **Który sponsor ma pod opieką chomiki z największą liczbą zwycięstw.**
 
 
 
