@@ -33,7 +33,9 @@ def gen_rasa():
     dane = [
         {'id_rasy': 1, 'nazwa': 'Syryjski', 'cechy': fake.bs()},
         {'id_rasy': 2, 'nazwa': 'Dżungarski', 'cechy': fake.bs()},
-        {'id_rasy': 3, 'nazwa': 'Roborowskiego', 'cechy': fake.bs()}
+        {'id_rasy': 3, 'nazwa': 'Roborowskiego', 'cechy': fake.bs()},
+        {'id_rasy': 4, 'nazwa': 'Campbella', 'cechy': fake.bs()},
+        {'id_rasy': 5, 'nazwa': 'Chiński', 'cechy': fake.bs()}
     ]
     return pd.DataFrame(dane)
 
@@ -101,6 +103,16 @@ def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
 
     dzisiaj = datetime.now().date()
 
+
+    wagi_ras = {
+        1: (80, 150),  # Syryjski
+        2: (18, 45),   # Dżungarski
+        3: (16, 26),   # Roborowskiego
+        4: (20, 40),   # Campbella
+        5: (25, 45)    # Chiński
+    }
+
+
     for i in range(1, n + 1):
         im, _, plec = functions.losuj_osobe()
         urodzenie = fake.date_between(start_date='-7y', end_date='-6m')
@@ -121,15 +133,21 @@ def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
                     smierc = fake.date_between(start_date=start_s, end_date='today')
                 else:
                     smierc = None
+
+        wylosowana_rasa = df_rasy.sample(1).iloc[0]
+        id_rasy = int(wylosowana_rasa['id_rasy'])
+        min_w, max_w = wagi_ras.get(id_rasy, (30, 100))
+        waga = random.randint(min_w, max_w)
+
         dane.append({
             'id_chomika': i,
             'imie': im,
             'plec': plec,
             'data_urodzenia': urodzenie,
             'data_smierci': smierc,
-            'waga': random.randint(30, 150),
+            'waga': waga,
             'historia': fake.sentence(),
-            'id_rasy': df_rasy.sample(1).iloc[0]['id_rasy'],
+            'id_rasy': id_rasy,
             'id_sponsora': random.randint(1, max_sponsor)
         })
     return pd.DataFrame(dane)
