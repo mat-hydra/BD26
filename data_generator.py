@@ -294,7 +294,7 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
         if zyjace_chomiki.empty:
             continue
 
-        for _ in range(3, len(zyjace_chomiki) // 5):
+        for _ in range(len(zyjace_chomiki) // 5):
             chomik = zyjace_chomiki.sample(1).iloc[0]
 
             id_konk = random.randint(1, len(df_konkurencje))
