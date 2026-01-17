@@ -31,11 +31,11 @@ def gen_kraje(n=5):
 
 def gen_rasa():
     dane = [
-        {'id_rasy': 1, 'nazwa': 'Syryjski', 'cechy': fake.bs()},
-        {'id_rasy': 2, 'nazwa': 'Dżungarski', 'cechy': fake.bs()},
-        {'id_rasy': 3, 'nazwa': 'Roborowskiego', 'cechy': fake.bs()},
-        {'id_rasy': 4, 'nazwa': 'Campbella', 'cechy': fake.bs()},
-        {'id_rasy': 5, 'nazwa': 'Chiński', 'cechy': fake.bs()}
+        {'id_rasy': 1, 'nazwa': 'Syryjski', 'cechy': 'Duży, samotniczy, łagodny'},
+        {'id_rasy': 2, 'nazwa': 'Dżungarski', 'cechy': 'Mały, szybki, energiczny'},
+        {'id_rasy': 3, 'nazwa': 'Roborowskiego', 'cechy': 'Bardzo mały, szybki, zwinny'},
+        {'id_rasy': 4, 'nazwa': 'Campbella', 'cechy': 'Energiczny, płochliwy, łatwy do oswojenia'},
+        {'id_rasy': 5, 'nazwa': 'Chiński', 'cechy': 'Dobrze się wspina, samotniczy, cichy, spokojny'}
     ]
     return pd.DataFrame(dane)
 

@@ -2,5 +2,3 @@
 ## 1. opisy:
     1.1. chomikow aktualnie fake.bs()
     1.2. sposnsorow aktualnie fake.catchphrase()
-
-## 2. przedzialy wag dla ras 
