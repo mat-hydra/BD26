@@ -146,7 +146,7 @@ def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
             'data_urodzenia': urodzenie,
             'data_smierci': smierc,
             'waga': waga,
-            'historia': fake.sentence(),
+            'historia': None,
             'id_rasy': id_rasy,
             'id_sponsora': random.randint(1, max_sponsor)
         })
@@ -294,7 +294,7 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
         if zyjace_chomiki.empty:
             continue
 
-        for _ in range(len(zyjace_chomiki) // 5):
+        for _ in range(len(zyjace_chomiki) // 2):
             chomik = zyjace_chomiki.sample(1).iloc[0]
 
             id_konk = random.randint(1, len(df_konkurencje))
@@ -309,7 +309,7 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
 
             dane.append({
                 'id_przebiegu': len(dane) + 1,
-                'godzina': fake.time(),
+                'godzina': f"{random.randint(9, 17):02d}:{random.randint(0, 59):02d}:{random.randint(0, 59):02d}",
                 'zwyciezca': random.choice([True, False, False]),
                 'czas': czas,
                 'id_chomika': chomik['id_chomika'],
@@ -342,6 +342,18 @@ def gen_kontrola(n=20, df_chomiki=None, df_substancje=None):
             'id_substancji': substancja
         })
     return pd.DataFrame(dane)
+
+
+def gen_historia(engine, df_przebieg, df_zawody):
+    dane = df_przebieg.merge(df_zawody, on='id_zawodow')
+    dane['miejsce'] = dane.groupby(['id_zawodow', 'id_konkurencji'])['czas'].rank('min').astype(int)
+    dane['historia'] = dane['nazwa'] + ': ' + dane['miejsce'].astype(str) + ' miejsce'
+
+    with engine.connect() as conn:
+        for id_chomika, grupa in dane.groupby('id_chomika'):
+            wynik = ", ".join(grupa['historia'])
+            conn.execute(text(f'UPDATE chomiki SET historia = "{wynik}" WHERE id_chomika = {id_chomika}'))
+        conn.commit()
 
 
 # 4. URUCHOMIENIE
@@ -418,6 +430,7 @@ def main():
     df_kontrola = gen_kontrola(20, df_chomiki, df_substancje)
     df_kontrola.to_sql('kontrola_antydopingowa', engine, if_exists='append', index=False)
 
+    gen_historia(engine, df_przebieg, df_zawody)
 
 if __name__ == "__main__":
     main()
