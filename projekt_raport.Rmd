@@ -38,13 +38,15 @@ con <- dbConnect(RMariaDB::MariaDB(),
 # **Wstęp**
 Niniejszy raport stanowi analizę danych Międzynarodowej Federacji Wyścigów Chomików. Celem dokumentu jest ocena wyników sportowych, kondycji finansowej federacji oraz analiza trendów w chomiczym sporcie na podstawie zgromadzonych **`r dbGetQuery(con, "SELECT COUNT(*) as n FROM chomiki")$n` ** rekordów chomików, i **`r dbGetQuery(con, "SELECT COUNT(*) as n FROM zawody")$n`** rekordów zawodów.
 
+<br><br>
 
 # **Analiza Mistrzów i Wyników Sportowych**
 
 ```{sql connection=con, output.var = "mistrze_wyniki"}
-SELECT konkurencje.kategorie as kategoria, chomiki.imie as imie  , chomiki.rasa as rasa, COUNT(przebieg.zwyciezca) as liczba_wygranych FROM przebieg
+SELECT konkurencje.kategorie as kategoria, chomiki.imie as imie  , rasa.nazwa as rasa, COUNT(przebieg.zwyciezca) as liczba_wygranych FROM przebieg
 JOIN chomiki ON przebieg.id_chomika = chomiki.id_chomika
 JOIN konkurencje ON przebieg.id_konkurencji = konkurencje.id_konkurencji
+JOIN rasa ON chomiki.id_rasy = rasa.id_rasy
 WHERE przebieg.zwyciezca = 1
 GROUP BY kategoria, imie, rasa
 ORDER BY kategoria, liczba_wygranych ;
@@ -55,18 +57,17 @@ top_chomiki <- mistrze_wyniki %>%
   group_by(kategoria) %>% 
   slice_max(liczba_wygranych, n = 3)
 
-ggplot(top_chomiki, aes(x = reorder(imie, liczba_wygranych), y = liczba_wygranych, fill = kategoria)) +
-  geom_col(color = "black", width = 0.7) +
+ggplot(top_chomiki, aes(x = reorder(imie, liczba_wygranych), y = liczba_wygranych)) +
+  geom_col(fill= "orange",color = "black", width = 1) +
   coord_flip() + 
   facet_wrap(~kategoria, scales = "free_y") + 
-  labs(
-    x = "Imię chomika",
-    y = "Liczba zwycięstw") +
+  labs(x = "Imię chomika", y = "Liczba zwycięstw") +
   scale_y_continuous(breaks = function(x) seq(0, max(x), by = 1)) +
-
   theme_minimal(base_size = 13) +theme(legend.position = "none", )
 
 ```
+
+<br><br>
 
 # **Szczyt Kariery i Wiek Zawodników**
 
@@ -83,46 +84,18 @@ WHERE zwyciezca = 1 ;
 ```{r wykres_zwyciestwa_wiek}
 ggplot(zwyciestwa_wiek, aes(x = wiek_w_miesiacach)) +
   
-  geom_bar(fill = "darkorange", color = "white", alpha = 0.9, width = 0.8) +
-  scale_x_continuous(breaks = seq(0, 30, by = 1)) +
-  labs(
-    x = "Wiek chomika (w miesiącach)",
-    y = "Łączna liczba zwycięstw",) +
+  geom_bar(fill = "darkorange", color = "black", alpha = 0.9, width = 0.8) +
+  scale_x_continuous(breaks = seq(0, 30, by = 2)) +
+  labs(x = "Wiek chomika (w miesiącach)",y = "Łączna liczba zwycięstw",) +
 
   theme_minimal(base_size = 13) + 
-  theme(
-    axis.text = element_text(color = "black"),
+  theme( axis.text = element_text(color = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank() )
 ```
 
-# **Wpływ Finansowania na Sukces (Nierówności)**
-```{sql connection=con, output.var = "fin_sukces"}
-SELECT chomiki.imie as imie, SUM(finanse.dochod) AS suma_inwestycji, 
-(SELECT COUNT(*) FROM przebieg WHERE przebieg.id_chomika = chomiki.id_chomika AND przebieg.zwyciezca = 1) AS liczba_wygranych FROM chomiki
-JOIN finanse ON chomiki.id_chomika = finanse.id_chomika
-GROUP BY chomiki.id_chomika, imie
-ORDER BY liczba_wygranych DESC, suma_inwestycji DESC ;
-```
+<br><br>
 
-
-```{r wykres_fin_sukces}
-
-fin_sukces$liczba_wygranych <- as.numeric(fin_sukces$liczba_wygranych)
-fin_sukces$suma_inwestycji <- as.numeric(fin_sukces$suma_inwestycji)
-ggplot(fin_sukces, aes(x = suma_inwestycji, y = liczba_wygranych)) +
-  geom_jitter(size = 3, color = "orange", alpha = 0.7, width = 0.5, height = 0) +
-  scale_x_continuous(limits = c(0, 50), breaks = seq(0, 50, by = 10)) +
-  scale_y_continuous(breaks = function(x) seq(0, max(x) + 1, by = 1)) +
-  
-  labs(
-    x = "Suma inwestycji",
-    y = "Łączna liczba wygranych") +
-  
-  theme_minimal(base_size = 18) +theme(
-    axis.text = element_text(color = "black"),
-    panel.grid.minor = element_blank())
-```
 
 # **Trendy i Popularność Sportu**
 ```{sql connection=con, output.var = "tre_pop"}
@@ -137,51 +110,56 @@ ORDER BY liczba_uczestnikow DESC ;
 
 ```{r wykres_tre_pop}
 tre_pop$data <- as.Date(tre_pop$data)
+tre_pop$liczba_uczestnikow <- as.numeric(tre_pop$liczba_uczestnikow)
+
 ggplot(tre_pop, aes(x = data, y = liczba_uczestnikow)) +
-  geom_line(color = "darkorange", size = 1.5) +
-  geom_point(color = "black", size = 3) +
-  labs(
-    x = "Data zawodów",
-    y = "Liczba uczestników") +
-  theme_minimal(base_size = 13) +theme(panel.grid.minor = element_blank()
+  geom_line(color = "orange", size = 1.5) +
+  geom_point(color = "darkorange", size = 3) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y", date_minor_breaks = "3 months" ) +
+  scale_y_continuous(breaks = seq(min(tre_pop$liczba_uczestnikow), max(tre_pop$liczba_uczestnikow), by = 1)) +
+  labs(x = "Data zawodów", y = "Liczba uczestników") +
+  theme_minimal(base_size = 13) +
+  theme(panel.grid.minor.x = element_line(color = "#ebebeb"), panel.grid.minor.y = element_blank() 
   )
 ```
+
+<br><br>
+
 
 # **Kondycja Finansowa i Atrakcyjność Rynkowa**
 
 ## **Atrakcyjność Rynkowa: Portfolio Sponsorów**
 ```{sql connection=con, output.var = "fin_atr" }
 SELECT sponsorzy.nazwa AS sponsor, COUNT(chomiki.id_chomika) AS liczba_chomikow, 
-SUM(rejestracja_chomika.wpisowe) AS suma_wplat
+SUM(finanse.kwota) AS suma_wplat
 FROM sponsorzy
 JOIN chomiki ON sponsorzy.id_sponsora = chomiki.id_sponsora
-JOIN rejestracja_chomika ON chomiki.id_chomika = rejestracja_chomika.id_chomika
+JOIN finanse ON chomiki.id_chomika = finanse.id_chomika
+WHERE finanse.id_typu = 1
 GROUP BY sponsorzy.id_sponsora, sponsorzy.nazwa
 ORDER BY suma_wplat DESC;
 ```
 
 ```{r wykres_fin_atr}
 ggplot(fin_atr, aes(x = reorder(sponsor, -suma_wplat), y = suma_wplat)) +
+  geom_bar(fill = "orange", color = "black", alpha = 0.9, width = 0.7, stat = "identity") +
   
-  geom_bar(fill = "steelblue", color = "white", alpha = 0.9, width = 0.7, stat = "identity") +
-  
-  labs(
-    x = "Sponsor",
-    y = "Łączny przychód z wpisowego (PLN)",) +
-  
+  labs(x = "Sponsor", y = "Łączny przychód z wpisowego (PLN)",) +
   theme_minimal(base_size = 13) + 
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black"),
+  theme( axis.text.x = element_text(angle = 45, hjust = 1, color = "black"),
     axis.text.y = element_text(color = "black"),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank())
 
 ```
 
+<br><br>
+
+
 ## **Atrakcyjność Rynkowa: Wydatki na Kadry**
 ```{sql connection=con, output.var = "fin_atr1" }
 
-SELECT DATE_FORMAT(data_wypłaty, '%Y-%m') AS miesiac, SUM(kwota_zl) AS suma_wydatkow
+SELECT DATE_FORMAT(data_wyplaty, '%Y-%m') AS miesiac, SUM(kwota_zl) AS suma_wydatkow
 FROM wyplaty
 GROUP BY miesiac
 ORDER BY miesiac;
@@ -189,34 +167,116 @@ ORDER BY miesiac;
 
 ```{r wykres_fin_atr1}
 
-ggplot(fin_atr1, aes(x = miesiac, y = suma_wydatkow, group = 1)) +
-  
-  geom_area(fill = "darkorange", alpha = 0.2) +
-  geom_line(color = "darkorange", size = 1.1) +
-  geom_point(color = "darkorange", size = 2) +
-  
-  labs(
-    x = "Miesiąc (rok-miesiąc)",
-    y = "Łączna kwota wypłat (PLN)",) +
-  
-  theme_minimal(base_size = 13) + 
-  theme(
-    axis.text.x = element_text(angle = 90, vjust = 0.5, color = "black"),
-    axis.text.y = element_text(color = "black"),
-    panel.grid.minor = element_blank())
+fin_atr1$miesiac <- as.Date(paste0(fin_atr1$miesiac, "-01"))
 
+ggplot(fin_atr1, aes(x = miesiac, y = suma_wydatkow, group = 1)) +
+  geom_area(fill = "darkorange", alpha = 0.5) +
+  geom_line(color = "orange", size = 1.1) +
+  geom_point(color = "darkorange", size = 2) +
+  scale_x_date(date_breaks = "3 months", date_labels = "%Y-%m") +
+  
+  labs(x = "Rok oraz miesiąc", y = "Łączna kwota wypłat (PLN)") +
+  theme_minimal(base_size = 13) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, color = "black"),
+  axis.text.y = element_text(color = "black"),
+  panel.grid.minor = element_blank())
 ```
+
+<br><br>
 
 # **Wpływ wagi na wyniki – czy lżejsze chomiki są szybsze?**
 
+```{sql connection=con, output.var = "dane_o_wadze", echo=FALSE}
+SELECT chomiki.imie, chomiki.waga, przebieg.czas FROM przebieg
+JOIN chomiki ON przebieg.id_chomika = chomiki.id_chomika
+WHERE chomiki.waga > 0 AND przebieg.czas > 0;
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dane_o_wadze, aes(x = waga, y = czas)) +
+  geom_point(color = "orange", size = 3, alpha = 0.8) + 
+  geom_smooth(method = "lm", color = "darkblue", se = FALSE, size = 1) +
+  scale_x_continuous(breaks = seq(0, 150, by = 10)) + 
+  scale_y_continuous(breaks = seq(0, 130, by = 10)) +
+  
+  labs(x = "Waga chomika (g)", y = "Czas przebiegu (s)") +
+  theme_minimal(base_size = 13) +
+  theme(axis.text = element_text(color = "black"), panel.grid.minor = element_blank() )
+```
+
+
+Niebieska linia na tym wykresie to linia trendu. Pokazuje ona ogólną zależność dla wszystkich zawodników, ignorując pojedyncze odstępstwa. Jeśli linia wznosi się do góry (↗), oznacza to, że im cięższy jest chomik, tym dłuższy czas osiąga (czyli cięższe chomiki są wolniejsze). Jeśli linia opada w dół (↘), oznacza to, że im cięższy jest chomik, tym krótszy czas osiąga (czyli cięższe chomiki są szybsze).Im bardziej stroma jest ta linia, tym silniejszy jest wpływ wagi na wynik biegu.
+
+
+<br><br>
 
 # **Jaka jest skala dopingu w chomiczym sporcie?**
 
+```{sql connection=con, output.var = "dane_doping", echo=FALSE}
+SELECT 
+    IFNULL(s.nazwa, 'Czysty') as nazwa, 
+    COUNT(k.id_chomika) as liczba_przypadkow
+FROM kontrola_antydopingowa k
+LEFT JOIN substancje_zakazane s ON k.id_substancji = s.id_substancji
+GROUP BY nazwa;
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dane_doping, aes(x = nazwa, y = liczba_przypadkow, fill = nazwa)) +
+geom_col(color = "black", size = 0.5, show.legend = FALSE) +
+scale_fill_manual(values = c("orange", "orange3", "orange4")) +
+labs( x = "Status", y = "Liczba chomików") +theme_minimal(base_size = 13) 
+```
+
+
+<br><br>
 
 # **Gdzie chomiczy sport jest najpopularniejszy?**
+
+```{sql connection=con, output.var = "dane_kraje", echo=FALSE}
+SELECT k.nazwa AS kraj, 
+COUNT(*) AS liczba_zawodow
+FROM zawody z
+JOIN miasta m ON z.id_miasta = m.id_miasta
+JOIN kraje k ON m.id_kraju = k.id_kraju
+GROUP BY k.nazwa;
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dane_kraje, aes(x = kraj, y = liczba_zawodow, fill = kraj)) +
+  geom_col(color = "black", size = 0.5, show.legend = FALSE) +
+  scale_fill_manual(values = c( "orange2", "orange3", "orange4","chocolate", "saddlebrown")) +
+  labs(x = "Kraj", y = "Suma liczby zawodów") + theme_minimal(base_size = 13) 
+```
+
+<br><br>
 
 
 # **Który sponsor ma pod opieką chomiki z największą liczbą zwycięstw.**
 
+```{sql connection=con, output.var = "dane_sponsorzy", echo=FALSE}
+SELECT 
+s.nazwa AS sponsor, 
+COUNT(*) AS liczba_zwyciestw
+FROM sponsorzy s
+JOIN chomiki c ON s.id_sponsora = c.id_sponsora
+JOIN przebieg p ON c.id_chomika = p.id_chomika
+WHERE p.czas = (SELECT MIN(czas) FROM przebieg p2 WHERE p2.id_zawodow = p.id_zawodow)
+GROUP BY s.nazwa
+ORDER BY liczba_zwyciestw DESC;
+```
 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(dane_sponsorzy, aes(x = sponsor, y = liczba_zwyciestw, fill = sponsor)) +
+  geom_col(color = "black", size = 0.5, show.legend = FALSE) +
+  scale_fill_manual(values = c("darkorange", "orange2", "orange3", "orange4", "chocolate", "saddlebrown")) +
+  labs(x = "Sponsor", y = "Liczba wygranych") +
+  theme_minimal(base_size = 13) +
+  theme( axis.text.x = element_text(angle = 45, hjust = 1, color = "black"),
+    axis.text.y = element_text(color = "black"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank())
+
+```
 
