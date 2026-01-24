@@ -2,7 +2,7 @@ import pandas as pd
 import random
 from sqlalchemy import create_engine, text
 from faker import Faker
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import functions
 
 # KONFIGURACJA
@@ -19,7 +19,16 @@ SQL_STRUCTURE = f.read()
 
 # 3.1 tabele niezależne
 
-def gen_kraje(n=5):
+def gen_kraje(n=15):
+    """
+    Generuje ramkę danych zawierającą unikalne nazwy krajów.
+
+    Args:
+        n (int): Liczba krajów do wygenerowania. Domyślnie 15.
+
+    Returns:
+        DataFrame: kolumny - {id_kraju, nazwa}
+    """
     dane = []
     for i in range(1, n + 1):
         dane.append({
@@ -30,6 +39,12 @@ def gen_kraje(n=5):
 
 
 def gen_rasa():
+    """
+    Zwraca ramkę danych z predefiniowanymi rasami chomików i ich cechami.
+
+    Returns:
+        DataFrame: kolumny - {id_rasy, nazwa, cechy}
+    """
     dane = [
         {'id_rasy': 1, 'nazwa': 'Syryjski', 'cechy': 'Duży, samotniczy, łagodny'},
         {'id_rasy': 2, 'nazwa': 'Dżungarski', 'cechy': 'Mały, szybki, energiczny'},
@@ -41,6 +56,12 @@ def gen_rasa():
 
 
 def gen_typ_transakcji():
+    """
+    Generuje ramkę danych z typami operacji finansowych w federacji.
+
+    Returns:
+        DataFrame: kolumny - {id_typu, nazwa, opis}
+    """
     dane = [
         {'id_typu': 1, 'nazwa': 'Opłata rejestracyjna', 'opis': 'Jednorazowa opłata wpisowa za  chomika do federacji'},
         {'id_typu': 2, 'nazwa': 'Zakup Merchu', 'opis': 'Sprzedaż oficjalnych gadżetów federacji'},
@@ -50,7 +71,16 @@ def gen_typ_transakcji():
     return pd.DataFrame(dane)
 
 
-def gen_sponsorzy(n=10):
+def gen_sponsorzy(n=20):
+    """
+    Generuje ramkę danych z profilami sponsorów federacji.
+
+    Args:
+        n (int): Liczba sponsorów do wygenerowania. Domyślnie 20.
+
+    Returns:
+        DataFrame: kolumny - {id_sponsora, nazwa, wspolpraca_od, wspolpraca_do, opis, telefon, mail}
+    """
     dane = []
     for i in range(1, n + 1):
         dane.append({
@@ -66,6 +96,12 @@ def gen_sponsorzy(n=10):
 
 
 def gen_konkurencje():
+    """
+    Zwraca ramkę danych z dostępnymi rodzajami konkurencji sportowych.
+
+    Returns:
+        DataFrame: kolumny - {id_konkurencji, nazwa, kategorie, charakterystyka}
+    """
     lista = [
         {'id_konkurencji': 1, 'nazwa': 'Sprint', 'kategorie': 'formula CH', 'charakterystyka': 'Bieg na 5m'},
         {'id_konkurencji': 2, 'nazwa': 'Kołowrotek', 'kategorie': 'naturalne', 'charakterystyka': 'Dystans w 1min'},
@@ -75,6 +111,12 @@ def gen_konkurencje():
 
 
 def gen_substancje():
+    """
+    Zwraca ramkę danych z listą substancji zakazanych w sporcie chomików.
+
+    Returns:
+        DataFrame: kolumny - {id_substancji, nazwa}
+    """
     return pd.DataFrame([
         {'id_substancji': 1, 'nazwa': 'Słonecznik modyfikowany'},
         {'id_substancji': 2, 'nazwa': 'Kofeina gryzoniowa'}
@@ -84,6 +126,16 @@ def gen_substancje():
 # 3.2 tabele 1st
 
 def gen_miasta(df_kraje, miasta_na_kraj=3):
+    """
+    Generuje listę miast przypisanych do konkretnych krajów.
+
+    Args:
+        df_kraje (DataFrame)
+        miasta_na_kraj (int): Liczba miast do wylosowania dla każdego kraju. Domyślnie 3.
+
+    Returns:
+        DataFrame: kolumny - {id_miasta, nazwa, id_kraju}
+    """
     dane = []
     id_miasta = 1
     for _, kraj in df_kraje.iterrows():
@@ -98,7 +150,18 @@ def gen_miasta(df_kraje, miasta_na_kraj=3):
     return pd.DataFrame(dane)
 
 
-def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
+def gen_chomiki(df_rasy, df_sponsor, n=500):
+    """
+    Generuje dane zawodników (chomików) wraz z ich statystykami i historią życia.
+
+    Args:
+        df_rasy (DataFrame)
+        df_sponsor (DataFrame)
+        n (int): Całkowita liczba chomików do wygenerowania. Domyślnie 500.
+
+    Returns:
+        DataFrame: kolumny - {id_chomika, imie, plec, data_urodzenia, data_smierci, waga, historia, id_rasy, id_sponsora}
+    """
     dane = []
 
     dzisiaj = datetime.now().date()
@@ -138,6 +201,7 @@ def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
         id_rasy = int(wylosowana_rasa['id_rasy'])
         min_w, max_w = wagi_ras.get(id_rasy, (30, 100))
         waga = random.randint(min_w, max_w)
+        id_sponsor = random.randint(1, len(df_sponsor))
 
         dane.append({
             'id_chomika': i,
@@ -148,13 +212,23 @@ def gen_chomiki(n=60, max_sponsor=10, df_rasy=None):
             'waga': waga,
             'historia': None,
             'id_rasy': id_rasy,
-            'id_sponsora': random.randint(1, max_sponsor)
+            'id_sponsora': id_sponsor
         })
     return pd.DataFrame(dane)
 
 
 # 3.3 tabele 2st
-def gen_pracownicy(n=40, df_miasta=None):
+def gen_pracownicy(df_miasta, n=40):
+    """
+    Generuje dane pracowników federacji z uwzględnieniem historii zatrudnienia.
+
+    Args:
+        df_miasta (DataFrame)
+        n (int): Liczba pracowników do wygenerowania. Domyślnie 40.
+
+    Returns:
+        DataFrame: kolumny - {id_pracownika, imie, nazwisko, pracuje_od, pracuje_do, mail, telefon, id_miasta, ulica, nr_domu, kod_pocztowy}
+    """
     dane = []
     start_federacji = datetime.now() - timedelta(days=5 * 365)
 
@@ -197,10 +271,38 @@ def gen_pracownicy(n=40, df_miasta=None):
     return df
 
 
-def gen_zawody(n=15, df_miasta=None):
+def gen_zawody(n=40, df_miasta=None):
+    """
+    Planuje kalendarz zawodów sportowych z walidacją liczby imprez w zeszłym roku.
+
+    Args:
+        n (int): Łączna liczba zawodów do wygenerowania. Domyślnie 40.
+        df_miasta (DataFrame)
+
+    Returns:
+        DataFrame: kolumny - {id_zawodow, nazwa, termin, id_miasta, status}
+    """
     dane = []
 
-    for i in range(1, n + 1):
+    dzisiaj = datetime.now().date()
+    pocz_roktemu = date(dzisiaj.year-1, 1, 1)
+    kon_roktemu = date(dzisiaj.year-1, 12, 31)
+    
+    #minimum 10 zawodow w poprzednim roku
+    for i in range(1, 11):
+        miasto = df_miasta.sample(1).iloc[0]
+        data = fake.date_between(pocz_roktemu, kon_roktemu)
+        
+        dane.append({
+            'id_zawodow': i,
+            'nazwa': f"Grand Prix {miasto['nazwa']}",
+            'termin': data,
+            'id_miasta': miasto['id_miasta'],
+            'status': 'odbyte'
+        })
+
+    #generowanie na okresie -5lat do +1lat
+    for i in range(11, n + 10):
         miasto = df_miasta.sample(1).iloc[0]
         data = fake.date_between(start_date='-5y', end_date='+1y')
         if data > datetime.now().date():
@@ -221,6 +323,15 @@ def gen_zawody(n=15, df_miasta=None):
 
 
 def gen_wyplaty(df_pracownicy):
+    """
+    Generuje co-miesięczną historię wypłat dla wszystkich pracowników.
+
+    Args:
+        df_pracownicy (DataFrame)
+
+    Returns:
+        DataFrame: kolumny - {id_wyplaty, kwota_zl, data_wyplaty, id_pracownika}
+    """
     dane = []
     id_counter = 1
     for _, pracownik in df_pracownicy.iterrows():
@@ -242,6 +353,17 @@ def gen_wyplaty(df_pracownicy):
 
 
 def gen_finanse(df_chomiki, n_trans=100):
+    """
+    Generuje historię transakcji finansowych (wpisowe, merch, bilety).
+    Na początku generuje wpisowe dla każdego chomika zapisanego do federacji. Następnie generuje n_trans losowo wybranego typu.
+
+    Args:
+        df_chomiki (DataFrame)
+        n_trans (int): Liczba dodatkowych losowych transakcji do wygenerowania.
+
+    Returns:
+        DataFrame: kolumny - {id_transakcji, data_transakcji, kwota, id_typu, id_chomika, uwagi}
+    """
     dane = []
     id_counter = 1
     # rejestracja kazdego chomika
@@ -279,7 +401,18 @@ def gen_finanse(df_chomiki, n_trans=100):
     return pd.DataFrame(dane)
 
 
-def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
+def gen_przebieg(df_zawody=None, df_chomiki=None, df_konkurencje=None):
+    """
+    Generuje wyniki poszczególnych startów chomików w zawodach.
+
+    Args:
+        df_zawody (DataFrame)
+        df_chomiki (DataFrame)
+        df_konkurencje (DataFrame)
+
+    Returns:
+        DataFrame: kolumny - {id_przebiegu, godzina, zwyciezca, czas, id_chomika, id_zawodow, id_konkurencji}
+    """
     dane = []
 
     df_odbyte = df_zawody[df_zawody['status'] == 'odbyte']
@@ -293,9 +426,18 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
 
         if zyjace_chomiki.empty:
             continue
+        
+        freq_udzialu = random.uniform(0.3, 0.8)
 
-        for _ in range(len(zyjace_chomiki) // 2):
-            chomik = zyjace_chomiki.sample(1).iloc[0]
+        liczba_startujacych = int(len(zyjace_chomiki) * freq_udzialu)
+        
+        # min 3 chomiki
+        liczba_startujacych = max(min(liczba_startujacych, len(zyjace_chomiki)), 3)
+
+        # probka uczestnikow
+        uczestnicy = zyjace_chomiki.sample(n=liczba_startujacych)
+
+        for _, k in uczestnicy.iterrows():
 
             id_konk = random.randint(1, len(df_konkurencje))
 
@@ -312,7 +454,7 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
                 'godzina': f"{random.randint(9, 17):02d}:{random.randint(0, 59):02d}:{random.randint(0, 59):02d}",
                 'zwyciezca': random.choice([True, False, False]),
                 'czas': czas,
-                'id_chomika': chomik['id_chomika'],
+                'id_chomika': k['id_chomika'],
                 'id_zawodow': zawody['id_zawodow'],
                 'id_konkurencji': id_konk
             })
@@ -320,7 +462,18 @@ def gen_przebieg(n=200, df_zawody=None, df_chomiki=None, df_konkurencje=None):
     return pd.DataFrame(dane)
 
 
-def gen_kontrola(n=20, df_chomiki=None, df_substancje=None):
+def gen_kontrola(df_chomiki, df_substancje, n=100):
+    """
+    Generuje raporty z kontroli antydopingowych przeprowadzonych na zawodnikach.
+
+    Args:
+        n (int): Liczba kontroli do przeprowadzenia. Domyślnie 20.
+        df_chomiki (DataFrame)
+        df_substancje (DataFrame)
+
+    Returns:
+        DataFrame: kolumny - {id_kontroli, data_badania, id_chomika, id_substancji}
+    """
     dane = []
     dzisiaj = datetime.now().date()
 
@@ -344,17 +497,26 @@ def gen_kontrola(n=20, df_chomiki=None, df_substancje=None):
     return pd.DataFrame(dane)
 
 
-def gen_historia(engine, df_przebieg, df_zawody):
-    dane = df_przebieg.merge(df_zawody, on='id_zawodow')
+
+def gen_historia_chomika(df_przebieg, df_zawody):
+    """
+    Agreguje wyniki sportowe w tekstowy opis osiągnięć dla każdego chomika.
+
+    Args:
+        df_przebieg (DataFrame)
+        df_zawody (DataFrame)
+
+    Returns:
+        DataFrame: kolumny - {id_chomika, historia}
+    """
+    dane = df_przebieg.merge(df_zawody[['id_zawodow', 'nazwa']], on='id_zawodow')
+    
     dane['miejsce'] = dane.groupby(['id_zawodow', 'id_konkurencji'])['czas'].rank('min').astype(int)
-    dane['historia'] = dane['nazwa'] + ': ' + dane['miejsce'].astype(str) + ' miejsce'
+    dane['wpis'] = dane['nazwa'] + ': ' + dane['miejsce'].astype(str) + ' miejsce'
 
-    with engine.connect() as conn:
-        for id_chomika, grupa in dane.groupby('id_chomika'):
-            wynik = ", ".join(grupa['historia'])
-            conn.execute(text(f'UPDATE chomiki SET historia = "{wynik}" WHERE id_chomika = {id_chomika}'))
-        conn.commit()
-
+    df_h = dane.groupby('id_chomika')['wpis'].apply(lambda x: ", ".join(x)).reset_index()
+    df_h.columns = ['id_chomika', 'historia']
+    return df_h
 
 # 4. URUCHOMIENIE
 
@@ -384,10 +546,9 @@ def main():
         conn.commit()
         conn.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
 
+
+
     # Generowanie danych
-
-    ilosc_chomikow = 60
-
     df_kraje = gen_kraje()
     df_kraje.to_sql('kraje', engine, if_exists='append', index=False)
 
@@ -397,8 +558,8 @@ def main():
     df_typ_transakcji = gen_typ_transakcji()
     df_typ_transakcji.to_sql('typ_transakcji', engine, if_exists='append', index=False)
 
-    df_spon = gen_sponsorzy(10)
-    df_spon.to_sql('sponsorzy', engine, if_exists='append', index=False)
+    df_sponsor = gen_sponsorzy(10)
+    df_sponsor.to_sql('sponsorzy', engine, if_exists='append', index=False)
 
     df_konkurencje = gen_konkurencje()
     df_konkurencje.to_sql('konkurencje', engine, if_exists='append', index=False)
@@ -409,10 +570,10 @@ def main():
     df_miasta = gen_miasta(df_kraje)
     df_miasta.to_sql('miasta', engine, if_exists='append', index=False)
 
-    df_chomiki = gen_chomiki(ilosc_chomikow, 10, df_rasy)
+    df_chomiki = gen_chomiki(df_rasy, df_sponsor)
     df_chomiki.to_sql('chomiki', engine, if_exists='append', index=False)
 
-    df_pracownicy = gen_pracownicy(10, df_miasta)
+    df_pracownicy = gen_pracownicy(df_miasta)
     df_pracownicy.to_sql('pracownicy', engine, if_exists='append', index=False)
 
     df_zawody = gen_zawody(15, df_miasta)
@@ -424,13 +585,26 @@ def main():
     df_finanse = gen_finanse(df_chomiki)
     df_finanse.to_sql('finanse', engine, if_exists='append', index=False)
 
-    df_przebieg = gen_przebieg(200, df_zawody, df_chomiki, df_konkurencje)
+    df_przebieg = gen_przebieg(df_zawody, df_chomiki, df_konkurencje)
     df_przebieg.to_sql('przebieg', engine, if_exists='append', index=False)
 
-    df_kontrola = gen_kontrola(20, df_chomiki, df_substancje)
+    df_kontrola = gen_kontrola(df_chomiki, df_substancje, 20)
     df_kontrola.to_sql('kontrola_antydopingowa', engine, if_exists='append', index=False)
 
-    gen_historia(engine, df_przebieg, df_zawody)
+    df_historia = gen_historia_chomika(df_przebieg, df_zawody)
+
+
+    with engine.begin() as conn:
+            # tabela tymczasowa dla aktualizacji chomiki/historia
+            df_historia.to_sql('temp_h', conn, if_exists='replace', index=False)
+            
+            conn.execute(text("""
+                UPDATE chomiki 
+                JOIN temp_h ON chomiki.id_chomika = temp_h.id_chomika
+                SET chomiki.historia = temp_h.historia
+            """))
+            
+            conn.execute(text("DROP TABLE temp_h"))
 
 if __name__ == "__main__":
     main()
