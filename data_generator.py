@@ -3,7 +3,8 @@ import random
 from sqlalchemy import create_engine, text
 from faker import Faker
 from datetime import date, datetime, timedelta
-import functions
+from functions import *
+
 
 # KONFIGURACJA
 CONN_STR = "mysql+mysqlconnector://root:@localhost/MWFC"
@@ -103,9 +104,13 @@ def gen_konkurencje():
         DataFrame: kolumny - {id_konkurencji, nazwa, kategorie, charakterystyka}
     """
     lista = [
-        {'id_konkurencji': 1, 'nazwa': 'Sprint', 'kategorie': 'formula CH', 'charakterystyka': 'Bieg na 5m'},
-        {'id_konkurencji': 2, 'nazwa': 'Kołowrotek', 'kategorie': 'naturalne', 'charakterystyka': 'Dystans w 1min'},
-        {'id_konkurencji': 3, 'nazwa': 'Labirynt', 'kategorie': 'formula CH', 'charakterystyka': 'Czas wyjścia'}
+        {'id_konkurencji': 1, 'nazwa': 'Sprint 50cm', 'kategorie': 'naturalna', 'charakterystyka': 'Klasyczny sprint na 50 centymetrów'},
+        {'id_konkurencji': 2, 'nazwa': 'Skok przez płotki', 'kategorie': 'naturalna', 'charakterystyka': 'Klasyczne płotkarstwo na 100 centymetrów'},
+        {'id_konkurencji': 3, 'nazwa': 'Chomiczy Maraton', 'kategorie': 'naturalna', 'charakterystyka': 'Maraton w wersji chomiczej na 422 centymetrów'},
+        {'id_konkurencji': 4, 'nazwa': 'Półmaraton', 'kategorie': 'naturalna', 'charakterystyka': 'Półaraton w wersji chomiczej na 211 centymetrów'},
+        {'id_konkurencji': 5, 'nazwa': 'Wspinaczka', 'kategorie': 'naturalna', 'charakterystyka': 'Czas pokonania szczytu - 1 metrowa konstrukcja'},
+        {'id_konkurencji': 6, 'nazwa': 'Kołowrotek', 'kategorie': 'formula CH', 'charakterystyka': 'Test wytrzymałości - mierzony czas nieprzerwanego biegu w kołowrotku'},
+        {'id_konkurencji': 7, 'nazwa': 'Grand Prix Formuły Ch', 'kategorie': 'formula CH', 'charakterystyka': 'Wyścig pojazdów: czas przejazdu 3 pełnych okrążeń toru.'}
     ]
     return pd.DataFrame(lista)
 
@@ -177,7 +182,7 @@ def gen_chomiki(df_rasy, df_sponsor, n=500):
 
 
     for i in range(1, n + 1):
-        im, _, plec = functions.losuj_osobe()
+        im, _, plec = losuj_osobe()
         urodzenie = fake.date_between(start_date='-7y', end_date='-6m')
 
         smierc = None
@@ -218,13 +223,13 @@ def gen_chomiki(df_rasy, df_sponsor, n=500):
 
 
 # 3.3 tabele 2st
-def gen_pracownicy(df_miasta, n=40):
+def gen_pracownicy(df_miasta, n=30):
     """
     Generuje dane pracowników federacji z uwzględnieniem historii zatrudnienia.
 
     Args:
         df_miasta (DataFrame)
-        n (int): Liczba pracowników do wygenerowania. Domyślnie 40.
+        n (int): Liczba pracowników do wygenerowania.
 
     Returns:
         DataFrame: kolumny - {id_pracownika, imie, nazwisko, pracuje_od, pracuje_do, mail, telefon, id_miasta, ulica, nr_domu, kod_pocztowy}
@@ -233,7 +238,7 @@ def gen_pracownicy(df_miasta, n=40):
     start_federacji = datetime.now() - timedelta(days=5 * 365)
 
     for i in range(1, n + 1):
-        im, naz, _ = functions.losuj_osobe()
+        im, naz, _ = losuj_osobe()
 
         # zatrudnienia w ciągu ostatnich 5 lat
         data_zatrudnienia = fake.date_between(start_date=start_federacji, end_date='-1y')
@@ -242,7 +247,7 @@ def gen_pracownicy(df_miasta, n=40):
         if i <= 3:
             czy_odszedl = False
         else:
-            czy_odszedl = random.random() < 0.5
+            czy_odszedl = random.random() < 0.7
 
         if czy_odszedl:
             # Data zwolnienia>dacie zatrudnienia
@@ -276,7 +281,7 @@ def gen_zawody(n=40, df_miasta=None):
     Planuje kalendarz zawodów sportowych z walidacją liczby imprez w zeszłym roku.
 
     Args:
-        n (int): Łączna liczba zawodów do wygenerowania. Domyślnie 40.
+        n (int): Łączna liczba zawodów do wygenerowania.
         df_miasta (DataFrame)
 
     Returns:
@@ -352,7 +357,7 @@ def gen_wyplaty(df_pracownicy):
     return pd.DataFrame(dane)
 
 
-def gen_finanse(df_chomiki, n_trans=100):
+def gen_finanse(df_chomiki, n_trans=500):
     """
     Generuje historię transakcji finansowych (wpisowe, merch, bilety).
     Na początku generuje wpisowe dla każdego chomika zapisanego do federacji. Następnie generuje n_trans losowo wybranego typu.
@@ -371,7 +376,7 @@ def gen_finanse(df_chomiki, n_trans=100):
         dane.append({
             'id_transakcji': id_counter,
             'data_transakcji': chomik['data_urodzenia'],
-            'kwota': 50.00,
+            'kwota': 100.00,
             'id_typu': 1,
             'id_chomika': chomik['id_chomika'],
             'uwagi': f"Wpisowe: {chomik['imie']}"
@@ -379,14 +384,15 @@ def gen_finanse(df_chomiki, n_trans=100):
         id_counter += 1
 
     # bilety i merch
-    for i in range(n_trans):
-        typ = random.choice([2, 3])  # 2 = merch, 3 = bilet
+    for i in range(n_trans): 
+        # 2 = merch, 3 = bilet , 30% sprzedazy merchu, 70% biletów
+        typ = random.choices([2, 3], weights=[0.3, 0.7])[0]
 
         if typ == 2:  # merch
             kwota = random.randint(10, 200) + random.randint(0, 99) / 100  # cena merch rand
             uwagi = "Zakup gadżetów federacji"
         else:  # bilety
-            kwota = random.randint(10, 40) + random.randint(0, 99) / 100  # cena biletow rand
+            kwota = random.randint(40, 150) + random.randint(0, 99) / 100  # cena biletow rand
             uwagi = "Bilet wstępu na zawody"
 
         dane.append({
@@ -414,7 +420,6 @@ def gen_przebieg(df_zawody=None, df_chomiki=None, df_konkurencje=None):
         DataFrame: kolumny - {id_przebiegu, godzina, zwyciezca, czas, id_chomika, id_zawodow, id_konkurencji}
     """
     dane = []
-
     df_odbyte = df_zawody[df_zawody['status'] == 'odbyte']
 
     for _, zawody in df_odbyte.iterrows():
@@ -428,12 +433,9 @@ def gen_przebieg(df_zawody=None, df_chomiki=None, df_konkurencje=None):
             continue
         
         freq_udzialu = random.uniform(0.3, 0.8)
-
         liczba_startujacych = int(len(zyjace_chomiki) * freq_udzialu)
-        
         # min 3 chomiki
         liczba_startujacych = max(min(liczba_startujacych, len(zyjace_chomiki)), 3)
-
         # probka uczestnikow
         uczestnicy = zyjace_chomiki.sample(n=liczba_startujacych)
 
@@ -441,61 +443,89 @@ def gen_przebieg(df_zawody=None, df_chomiki=None, df_konkurencje=None):
 
             id_konk = random.randint(1, len(df_konkurencje))
 
-            # Zróżnicowanie czasu zw wzg. na konkurencje
-            if id_konk == 1:  # Sprint
-                czas = random.randint(10, 25)
-            elif id_konk == 2:  # Kołowrotek - stały czas testu
-                czas = 60
-            else:  # Labirynt
-                czas = random.randint(30, 120)
+            czas = czas_konkurencji(id_konk)
 
             dane.append({
                 'id_przebiegu': len(dane) + 1,
                 'godzina': f"{random.randint(9, 17):02d}:{random.randint(0, 59):02d}:{random.randint(0, 59):02d}",
-                'zwyciezca': random.choice([True, False, False]),
+                'zwyciezca': False,
                 'czas': czas,
                 'id_chomika': k['id_chomika'],
                 'id_zawodow': zawody['id_zawodow'],
                 'id_konkurencji': id_konk
             })
 
-    return pd.DataFrame(dane)
+        df_przebieg = pd.DataFrame(dane)
+
+        if not df_przebieg.empty:
+            # szukanie zwyciezcy
+            min_czasy = df_przebieg.groupby(['id_zawodow', 'id_konkurencji'])['czas'].transform('min')
+            df_przebieg['zwyciezca'] = df_przebieg['czas'] == min_czasy
+
+    return df_przebieg
 
 
-def gen_kontrola(df_chomiki, df_substancje, n=100):
+def gen_kontrola(df_przebieg, df_zawody, df_chomiki, df_substancje, freq=(0.05, 0.15)):
     """
-    Generuje raporty z kontroli antydopingowych przeprowadzonych na zawodnikach.
+    Generuje raporty z kontroli antydopingowych:
+    - Jeśli uczestnik bierze udział w zawodach to uzyskał negatywny wynik - id_substancji=NULL
+    - Pula chomików pod wpływem jest generowana losowo z ustalonego procentu frekwencji nieobecnych na zawodach
 
     Args:
-        n (int): Liczba kontroli do przeprowadzenia. Domyślnie 20.
+        df_przebieg (DataFrame)
+        df_zawody (DataFrame)
         df_chomiki (DataFrame)
         df_substancje (DataFrame)
+        freq (tuple[float, float])
 
     Returns:
-        DataFrame: kolumny - {id_kontroli, data_badania, id_chomika, id_substancji}
+        DataFrame: kolumny - {data_badania, id_chomika, id_substancji}
     """
     dane = []
-    dzisiaj = datetime.now().date()
-
-    for i in range(1, n + 1):
-        chomik = df_chomiki.sample(1).iloc[0]
-
-        start_zycia = chomik['data_urodzenia']
-        koniec_zycia = chomik['data_smierci'] if chomik['data_smierci'] else dzisiaj
-
-        if random.random() < 0.2:
-            substancja = df_substancje.sample(1).iloc[0]['id_substancji']
-        else:
-            substancja = None
-
-        dane.append({
-            'id_kontroli': i,
-            'data_badania': fake.date_between(start_date=start_zycia, end_date=koniec_zycia),
-            'id_chomika': chomik['id_chomika'],
-            'id_substancji': substancja
-        })
+    
+    # logika czasowa dla okresu każdych zawodów
+    for _, zawody in df_zawody.iterrows():
+        id_zaw = zawody['id_zawodow']
+        termin = zawody['termin']
+        
+        # set żyjących
+        zyjace = df_chomiki[
+            (df_chomiki['data_urodzenia'] < termin) & 
+            ((df_chomiki['data_smierci'].isna()) | (df_chomiki['data_smierci'] > termin))
+        ]
+        
+        if zyjace.empty:
+            continue
+            
+        # podział na obecnych i nieobecnych
+        id_uczestnikow = df_przebieg[df_przebieg['id_zawodow'] == id_zaw]['id_chomika'].unique()
+        obecni = zyjace[zyjace['id_chomika'].isin(id_uczestnikow)]
+        nieobecni = zyjace[~zyjace['id_chomika'].isin(id_uczestnikow)]
+        
+        # neg kontrole
+        for _, chomik in obecni.iterrows():
+            dane.append({
+                'data_badania': termin - timedelta(days=random.randint(1, 2)),
+                'id_chomika': chomik['id_chomika'],
+                'id_substancji': None
+            })
+            
+        # poz kontrole
+        if not nieobecni.empty:
+            freq_wpadki = random.uniform(*freq) 
+            n_neg = int(len(nieobecni) * freq_wpadki)
+            
+            if n_neg > 0:
+                set_neg = nieobecni.sample(n=min(n_neg, len(nieobecni)))
+                for _, chomik in set_neg.iterrows():
+                    substancja = df_substancje.sample(1).iloc[0]['id_substancji']
+                    dane.append({
+                        'data_badania': termin - timedelta(days=random.randint(1, 3)),
+                        'id_chomika': chomik['id_chomika'],
+                        'id_substancji': substancja
+                    })
+    
     return pd.DataFrame(dane)
-
 
 
 def gen_historia_chomika(df_przebieg, df_zawody):
@@ -517,6 +547,7 @@ def gen_historia_chomika(df_przebieg, df_zawody):
     df_h = dane.groupby('id_chomika')['wpis'].apply(lambda x: ", ".join(x)).reset_index()
     df_h.columns = ['id_chomika', 'historia']
     return df_h
+
 
 # 4. URUCHOMIENIE
 
@@ -573,7 +604,7 @@ def main():
     df_chomiki = gen_chomiki(df_rasy, df_sponsor)
     df_chomiki.to_sql('chomiki', engine, if_exists='append', index=False)
 
-    df_pracownicy = gen_pracownicy(df_miasta)
+    df_pracownicy = gen_pracownicy(df_miasta, 30)
     df_pracownicy.to_sql('pracownicy', engine, if_exists='append', index=False)
 
     df_zawody = gen_zawody(15, df_miasta)
@@ -582,13 +613,13 @@ def main():
     df_wyplaty = gen_wyplaty(df_pracownicy)
     df_wyplaty.to_sql('wyplaty', engine, if_exists='append', index=False)
 
-    df_finanse = gen_finanse(df_chomiki)
+    df_finanse = gen_finanse(df_chomiki, 300)
     df_finanse.to_sql('finanse', engine, if_exists='append', index=False)
 
     df_przebieg = gen_przebieg(df_zawody, df_chomiki, df_konkurencje)
     df_przebieg.to_sql('przebieg', engine, if_exists='append', index=False)
 
-    df_kontrola = gen_kontrola(df_chomiki, df_substancje, 20)
+    df_kontrola = gen_kontrola(df_przebieg, df_zawody, df_chomiki, df_substancje, (0.10, 0.20))
     df_kontrola.to_sql('kontrola_antydopingowa', engine, if_exists='append', index=False)
 
     df_historia = gen_historia_chomika(df_przebieg, df_zawody)

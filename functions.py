@@ -31,4 +31,21 @@ def losuj_osobe():
         return random.choice(IMIONAK).title(), random.choice(NAZWISKAK).title(), "K"
 
 
-# geografia
+
+def czas_konkurencji(id_konkurencji):
+    if id_konkurencji == 1:    # Sprint 50cm
+        return random.randint(4, 12)
+    elif id_konkurencji == 2:  # Skok przez płotki
+        return random.randint(8, 20)
+    elif id_konkurencji == 3:  # Chomiczy Maraton (422cm)
+        return random.randint(180, 400)
+    elif id_konkurencji == 4:  # Półmaraton (211cm)
+        return random.randint(80, 180)
+    elif id_konkurencji == 5:  # Wspinaczka
+        return random.randint(15, 50)
+    elif id_konkurencji == 6:  # Kołowrotek (wytrzymałość)
+        return random.randint(60, 600)
+    elif id_konkurencji == 7:  # Grand Prix Formuły Ch (3 okrążenia)
+        return random.randint(40, 120)
+    else:
+        return random.randint(30, 90) # bezpiecznik
