@@ -5,13 +5,15 @@ CREATE TABLE pracownicy (
     nazwisko VARCHAR(100) NULL,
     pracuje_od DATE NULL,
     pracuje_do DATE NULL,
-    mail VARCHAR(255) NULL,
+    mail VARCHAR(255) NOT NULL,
     telefon VARCHAR(20) NULL,
     id_miasta INT NOT NULL,
     ulica VARCHAR(255) NULL,
     nr_domu VARCHAR(20) NULL,
     kod_pocztowy VARCHAR(20) NULL,
-    PRIMARY KEY (id_pracownika)
+    PRIMARY KEY (id_pracownika),
+    CONSTRAINT UQ_pracownik_mail UNIQUE (mail),
+    CONSTRAINT UQ_pracownik_telefon UNIQUE (telefon)
 ) COMMENT 'tabela z informacjami o pracownikach';
 
 -- 2. Tabela: sponsorzy
@@ -22,8 +24,11 @@ CREATE TABLE sponsorzy (
     wspolpraca_do DATE NULL,
     opis TEXT NULL,
     telefon VARCHAR(20) NULL,
-    mail VARCHAR(255) NULL,
-    PRIMARY KEY (id_sponsora)
+    mail VARCHAR(255) NOT NULL,
+    PRIMARY KEY (id_sponsora),
+    CONSTRAINT UQ_sponsor_nazwa UNIQUE (nazwa),
+    CONSTRAINT UQ_sponsor_mail UNIQUE (mail),
+    CONSTRAINT UQ_sponsor_telefon UNIQUE (telefon)
 ) COMMENT 'tabela z informacjami o sponsorach';
 
 -- 3. Tabela: chomiki

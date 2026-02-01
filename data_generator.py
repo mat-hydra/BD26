@@ -86,12 +86,12 @@ def gen_sponsorzy(n=20):
     for i in range(1, n + 1):
         dane.append({
             'id_sponsora': i,
-            'nazwa': fake.company(),
+            'nazwa': fake.unique.company(),
             'wspolpraca_od': fake.date_between(start_date='-5y', end_date='-2y'),
             'wspolpraca_do': fake.date_between(start_date='today', end_date='+2y'),
-            'opis': fake.catch_phrase(),
-            'telefon': fake.phone_number(),
-            'mail': fake.company_email()
+            'opis': fake.unique.catch_phrase(),
+            'telefon': fake.unique.phone_number(),
+            'mail': fake.unique.company_email()
         })
     return pd.DataFrame(dane)
 
@@ -260,7 +260,7 @@ def gen_pracownicy(df_miasta, n=30):
             'pracuje_od': data_zatrudnienia,
             'pracuje_do': data_zwolnienia,
             'mail': f"{im[:3].lower()}{naz.lower()}@federacja.pl",
-            'telefon': fake.phone_number()[:20],
+            'telefon': fake.unique.phone_number()[:20],
             'id_miasta': df_miasta.sample(1).iloc[0]['id_miasta'],
             'ulica': fake.street_name(),
             'nr_domu': fake.building_number(),
@@ -397,7 +397,7 @@ def gen_finanse(df_chomiki, n_trans=500):
 
         dane.append({
             'id_transakcji': id_counter,
-            'data_transakcji': fake.date_this_year(),
+            'data_transakcji': fake.date_between(start_date='-5y'),
             'kwota': kwota,
             'id_typu': typ,
             'id_chomika': None,
@@ -432,7 +432,7 @@ def gen_przebieg(df_zawody=None, df_chomiki=None, df_konkurencje=None):
         if zyjace_chomiki.empty:
             continue
         
-        freq_udzialu = random.uniform(0.3, 0.8)
+        freq_udzialu = random.uniform(0.15, 0.4)
         liczba_startujacych = int(len(zyjace_chomiki) * freq_udzialu)
         # min 3 chomiki
         liczba_startujacych = max(min(liczba_startujacych, len(zyjace_chomiki)), 3)
