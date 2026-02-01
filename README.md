@@ -3,33 +3,23 @@ Projekt grupowy - Bazy danych 2026
 
 ## 1. Spis użytych technologii
 
-**Baza Danych:**
+**Baza danych:**
 * **MySQL** - relacyjna baza danych przechowująca informacje.
 * **SQL** - język definicji struktury danych i zapytań.
 
-**Generowanie Danych (Python):**
+**Generowanie danych (Python):**
 * **SQLAlchemy** - mapowanie obiektowo-relacyjne i komunikacja z bazą.
 * **Pandas** - przetwarzanie i strukturyzacja generowanych danych.
 * **Faker** - generowanie realistycznych danych.
 
-**Analiza i Raport:**
-* **R** - język użyty do analizy statystycznej i wizualizacji danych.
+**Analiza i raport (R):**
 * **R Markdown** - narzędzie do tworzenia dynamicznych raportów (HTML/PDF/Word).
-* **RMariaDB i DBI** - interfejs połączenia R z bazą MySQL.
+* **RMariaDB i DBI** - interfejs połączenia R z bazą.
 * **ggplot2** - biblioteka do wizualizacji danych (wykresy).
-* **tidyverse (dplyr)** - manipulacja i agregacja danych wewnątrz R.
+* **tidyverse** - manipulacja i agregacja danych wewnątrz R.    
 * **knitr** - silnik generujący finalny dokument raportu.
-
-**Wykorzystane oprogramowania:**
-* **RStudio** - środowisko do obsługi języka R i generowania raportów.
-* **Visual Studio Code** - edytor kodu Python.
-
-* **R** - język użyty do analizy statystycznej i wizualizacji danych.
-* **RMarkdown** - narzędzie do tworzenia dynamicznych raportów (HTML/PDF/Word).
-* **RMariaDB i DBI** - interfejs połączenia R z bazą MySQL.
-* **ggplot2** - biblioteka do wizualizacji danych (wykresy).
-* **tidyverse (dplyr)** - manipulacja i agregacja danych wewnątrz R.
-* **knitr** - silnik generujący finalny dokument raportu.
+* **lubridate** - biblioteka do łatwiejszego zarządzania czasem
+* **ggrepel** - estetyka wykresów
 
 **Wykorzystane oprogramowania:**
 * **Visual Studio Code** - edytor kodu Python.
@@ -38,17 +28,17 @@ Projekt grupowy - Bazy danych 2026
 
 ## 2. Lista plików i opis ich zawartości
 
-**Kod źródłowy i generowanie danych:**
+**Generowanie danych:**
 * **`data_generator.py`** - główny skrypt w języku Python, odpowiada za połączenie z bazą danych.
 * **`functions.py`** - plik pomocniczy importowany przez główny generator. Zawiera funkcje użytkowe (np. `losuj_osobe`), pomaga zachować większą czytelność głównego kodu.
 * **`requirements.txt`** - lista bibliotek Python wymaganych do uruchomienia projektu (pandas, faker, sqlalchemy). Umożliwia szybką instalację środowiska komendą `pip install`.
 
-**Baza Danych:**
+**Baza danych:**
 * **`db_structure.sql`** - Plik SQL zawierający definicje struktury bazy danych (DDL). Tworzy tabele, klucze główne, obce oraz relacje.
 * **`ERD.png`** - Graficzny schemat bazy danych (Entity Relationship Diagram) przedstawiający wizualnie połączenia między tabelami.
 * **`projekt.vuerd`** - Plik projektowy narzędzia Vuerd (Visual Studio Code), służący do wizualnego projektowania schematu bazy danych.
 
-**Analiza i Raport:**
+**Analiza i raport:**
 * **`projekt_raport.Rmd`** - Kod źródłowy raportu w RMarkdown. Łączy się z wypełnioną bazą danych, pobiera wygenerowane i tworzy na ich podstawie wykresy analityczne.
 * **`projekt_raport.html` / `.pdf`** - Wygenerowany, gotowy do odczytu raport końcowy (wynik działania pliku .Rmd).
 
@@ -62,7 +52,7 @@ Aby poprawnie uruchomić projekt i uzyskać pełną dokumentację analityczną, 
 
 ## Tworzenie bazy danych (Python)
 
-1. Upewnij się, że Twój lokalny serwer bazy danych (np. **XAMPP** lub **MySQL Server**) jest uruchomiony.
+1. Upewnij się, że Twój lokalny serwer bazy danych (np. **XAMPP**) jest uruchomiony.
 
 2. Otwórz terminal w folderze projektu.
 
@@ -80,7 +70,7 @@ Aby poprawnie uruchomić projekt i uzyskać pełną dokumentację analityczną, 
 
     Skrypt automatycznie wczyta strukturę z pliku **db_structure.sql**, wyczyści stare dane i wypełni tabele nowymi.
 
-## Generowanie Raportu i analiza danych (R)
+## Generowanie raportu i analiza danych (R)
 
 1. Otwórz plik **projekt_raport.Rmd** w RStudio.
 
@@ -166,9 +156,17 @@ W każdej relacji atrybut po lewej stronie strzałki (klucz główny) jednoznacz
 **Relacja: Kraje**
 * `id_kraju -> nazwa`
 
-    **Wyjaśnienie:** _Identyfikator kraju jednoznacznie wskazuje jego nazwę._
+    **Wyjaśnienie:** _Identyfikator kraju wskazuje jego nazwę._
 
 # 6. Uzasadnienie, że baza jest w EKNF.
+
 # 7. Trudności podczas realizacji projektu.
 
+Najtrudniejszym elementem projektu okazało się skonstruowanie logiki generatora, tak aby dane:
+
+* Zachowały spójność dat,
+* Były ze sobą powiązane w sposób logiczny,
+* Nauczenie się konfigurowania połączenia z bazą danych.
+
+Powyższe trudności miały znaczący wpływ na pozostałe etapy projektu, które musiały być podporządkowane strukturą pod generator danych, aby wszystko działało poprawnie. Niejednokrotnie zdażały się takie sytuacje jak np. wielokrotne poprawianie raportu wraz z analizą danych.
 
